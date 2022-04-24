@@ -51,17 +51,8 @@ public class GameClient
         _connection.Parser.HandlePacketData(data);
     }
 
-    private void ParserOnNewPacket(ClientPacket message)
-    {
-        try
-        {
-            PlusEnvironment.GetGame().GetPacketManager().TryExecutePacket(this, message);
-        }
-        catch (Exception e)
-        {
-            ExceptionLogger.LogException(e);
-        }
-    }
+    private void ParserOnNewPacket(ClientPacket message) =>
+        PlusEnvironment.GetGame().GetPacketManager().ExecutePacket(this, message);
 
     private void PolicyRequest()
     {

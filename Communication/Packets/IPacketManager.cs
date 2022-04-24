@@ -5,7 +5,6 @@ namespace Plus.Communication.Packets;
 
 public interface IPacketManager
 {
-    void TryExecutePacket(GameClient session, ClientPacket packet);
-    void WaitForAllToComplete();
+    void ExecutePacket(GameClient session, ClientPacket packet);
     void UnregisterAll();
 }
