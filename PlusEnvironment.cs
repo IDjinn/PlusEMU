@@ -68,7 +68,8 @@ public class PlusEnvironment : IPlusEnvironment
         IGame game,
         IEnumerable<IStartable> startableTasks,
         IConnectionHandling connectionHandling,
-        IRconSocket rconSocket)
+        IRconSocket rconSocket
+        )
     {
         _database = database;
         _configuration = configurationData;

@@ -14,15 +14,14 @@ public class ConnectionHandling : IConnectionHandling
 
     public void Init(int port, int maxConnections, int connectionsPerIp, bool enabeNagles)
     {
-        _socketManager.Init(port, maxConnections, connectionsPerIp, new InitialPacketParser(), !enabeNagles);
+        _socketManager.Init(enabeNagles, maxConnections, connectionsPerIp, port, new InitialPacketParser());
         _socketManager.OnConnectionEvent += OnConnectionEvent;
-        _socketManager.InitializeConnectionRequests();
     }
 
     private void OnConnectionEvent(ConnectionInformation connection)
     {
         connection.ConnectionChanged += OnConnectionChanged;
-        PlusEnvironment.GetGame().GetClientManager().CreateAndStartClient(Convert.ToInt32(connection.GetConnectionId()), connection);
+        PlusEnvironment.GetGame().GetClientManager().CreateAndStartClient(connection.GetConnectionId(), connection);
     }
 
     private void OnConnectionChanged(ConnectionInformation information, ConnectionState state)
