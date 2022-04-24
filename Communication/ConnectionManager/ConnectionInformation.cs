@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Net.Sockets;
+using NLog;
 
 namespace Plus.Communication.ConnectionManager;
 
 public class ConnectionInformation : IConnectionInformation
 {
+    private static readonly ILogger Log = LogManager.GetLogger("Plus.Communication.ConnectionInformation");
     public delegate void ConnectionChange(ConnectionInformation information, ConnectionState state);
 
     private readonly byte[] _buffer;
@@ -30,15 +32,13 @@ public class ConnectionInformation : IConnectionInformation
         _ip = ip;
         _sendCallback = SentData;
         _connectionId = connectionId;
-        if (ConnectionChanged != null)
-            ConnectionChanged.Invoke(this, ConnectionState.Open);
     }
 
     public IDataParser Parser { get; set; }
 
     public void Dispose()
     {
-        if (_isConnected) Disconnect();
+        Disconnect();
         GC.SuppressFinalize(this);
     }
 
@@ -46,18 +46,17 @@ public class ConnectionInformation : IConnectionInformation
 
     public void StartPacketProcessing()
     {
-        if (!_isConnected)
+        ConnectionChanged?.Invoke(this, ConnectionState.Open);
+        _isConnected = true;
+        
+        Log.Debug($"Starting packet processing of client [{_connectionId}]");
+        try
         {
-            _isConnected = true;
-            //Out.writeLine("Starting packet processsing of client [" + this.connectionID + "]", Out.logFlags.lowLogLevel);
-            try
-            {
-                _dataSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, IncomingDataPacket, _dataSocket);
-            }
-            catch
-            {
-                Disconnect();
-            }
+            _dataSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, IncomingDataPacket, _dataSocket);
+        }
+        catch
+        {
+            Disconnect();
         }
     }
 
@@ -69,87 +68,48 @@ public class ConnectionInformation : IConnectionInformation
     {
         try
         {
-            if (_isConnected)
+            _isConnected = false;
+            if (_dataSocket.Connected)
             {
-                _isConnected = false;
-
-                //Out.writeLine("Connection [" + this.connectionID + "] has been disconnected", Out.logFlags.BelowStandardlogLevel);
-                try
-                {
-                    if (_dataSocket != null && _dataSocket.Connected)
-                    {
-                        _dataSocket.Shutdown(SocketShutdown.Both);
-                        _dataSocket.Close();
-                    }
-                }
-                catch
-                {
-                    //ignored
-                }
-                _dataSocket.Dispose();
-                Parser.Dispose();
-                try
-                {
-                    if (ConnectionChanged != null)
-                        ConnectionChanged.Invoke(this, ConnectionState.Closed);
-                }
-                catch
-                {
-                    //ignored
-                }
-                ConnectionChanged = null;
+                _dataSocket.Shutdown(SocketShutdown.Both);
+                _dataSocket.Close();
             }
+
+            _dataSocket.Dispose();
+            Parser.Dispose();
+            ConnectionChanged?.Invoke(this, ConnectionState.Closed);
+            ConnectionChanged = null;
         }
-        catch { }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error while trying disconnect session id [{ConnectionId}]: {Message}",_connectionId, e.Message);
+        }
     }
 
     private void IncomingDataPacket(IAsyncResult iAr)
     {
-        //Out.writeLine("Packet received from client [" + this.connectionID + "]", Out.logFlags.lowLogLevel);
-        int bytesReceived;
         try
         {
-            //The amount of bytes received in the packet
-            bytesReceived = _dataSocket.EndReceive(iAr);
-        }
-        catch //(Exception e)
-        {
-            Disconnect();
-            return;
-        }
-        if (bytesReceived == 0)
-        {
-            Disconnect();
-            return;
-        }
+            var bytesReceived = _dataSocket.EndReceive(iAr);
+            if (bytesReceived == 0)
+            {
+                Disconnect();
+                return;
+            }
 
-        try
-        {
             var packet = new byte[bytesReceived];
             Array.Copy(_buffer, packet, bytesReceived);
-            HandlePacketData(packet);
+            Parser.HandlePacketData(packet);
         }
-        catch //(Exception e)
+        catch (Exception e)
         {
+            Log.Error(e,"Error while receiving packet from client id [{ConnectionId}]: {Message}", _connectionId, e.Message);
             Disconnect();
         }
         finally
         {
-            try
-            {
-                //and we keep looking for the next packet
-                _dataSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, IncomingDataPacket, _dataSocket);
-            }
-            catch //(Exception e)
-            {
-                Disconnect();
-            }
+            _dataSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, IncomingDataPacket, _dataSocket);
         }
-    }
-
-    private void HandlePacketData(byte[] packet)
-    {
-        if (Parser != null) Parser.HandlePacketData(packet);
     }
 
     public void SendData(byte[] packet)
@@ -159,8 +119,7 @@ public class ConnectionInformation : IConnectionInformation
             if (!_isConnected)
                 return;
 
-            //Console.WriteLine(string.Format("Data from server => [{0}]", packetData));
-            _dataSocket.BeginSend(packet, 0, packet.Length, 0, _sendCallback, null);
+            _dataSocket.BeginSend(packet, 0, packet.Length, 0, SendDataCallback, null);
         }
         catch
         {
@@ -178,5 +137,10 @@ public class ConnectionInformation : IConnectionInformation
         {
             Disconnect();
         }
+    }
+    
+    private void SendDataCallback(IAsyncResult callback)
+    {
+        
     }
 }
