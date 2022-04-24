@@ -70,10 +70,12 @@ public sealed class PacketManager : IPacketManager
         }
         catch (Exception e)
         {
-            Log.Error(e, "Error while parsing packet {packet}", packet.Id);
+            Log.Error(e, "Error while parsing packet {Packetid}", packet.Id);
         }
     }
 
+    // TODO: make async packet handler?
+    
     public void UnregisterAll()
     {
         _headerToPacketMapping.Clear();
