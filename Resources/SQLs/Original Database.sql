@@ -25052,3 +25052,13 @@ ALTER TABLE `user_roomvisits`
 ALTER TABLE `rooms` 
 	ADD `sale_price` INT(5) NOT NULL DEFAULT '0' AFTER `spush_enabled`, 
 	ADD `lay_enabled` ENUM('0','1') NOT NULL DEFAULT '0' AFTER `sale_price`;
+	
+	
+-- 3_DropIdKeyFromWardrobeTable
+
+ALTER TABLE `user_wardrobe`
+    DROP COLUMN `id`,
+    DROP INDEX `slot_id`,
+    DROP PRIMARY KEY,
+    DROP INDEX `user_id`,
+    ADD UNIQUE INDEX `user_id` (`user_id`, `slot_id`) USING BTREE;

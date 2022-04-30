@@ -3,7 +3,6 @@
 
 public class WardrobeSlot
 {
-    public int Id;
     public int UserId;
     public int SlotId;
     public string Look;
