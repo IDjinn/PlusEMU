@@ -1,26 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
+using System.Linq;
+using Plus.HabboHotel.Avatar;
 
 namespace Plus.Communication.Packets.Outgoing.Avatar;
 
 internal class WardrobeComposer : ServerPacket
 {
-    public WardrobeComposer(int userId) : base(ServerPacketHeader.WardrobeMessageComposer)
+    public WardrobeComposer(IList<WardrobeSlot>? wardrobes) : base(ServerPacketHeader.WardrobeMessageComposer)
     {
         WriteInteger(1);
-        using var dbClient = PlusEnvironment.GetDatabaseManager().GetQueryReactor();
-        dbClient.SetQuery("SELECT `slot_id`,`look`,`gender` FROM `user_wardrobe` WHERE `user_id` = '" + userId + "'");
-        var wardrobeData = dbClient.GetTable();
-        if (wardrobeData == null)
+        if (wardrobes is null || !wardrobes.Any())
+        {
             WriteInteger(0);
+        }
         else
         {
-            WriteInteger(wardrobeData.Rows.Count);
-            foreach (DataRow row in wardrobeData.Rows)
+            WriteInteger(wardrobes.Count);
+            foreach (var slot in wardrobes)
             {
-                WriteInteger(Convert.ToInt32(row["slot_id"]));
-                WriteString(Convert.ToString(row["look"]));
-                WriteString(row["gender"].ToString().ToUpper());
+                WriteInteger(slot.SlotId);
+                WriteString(slot.Look);
+                WriteString(slot.Gender);
             }
         }
     }
