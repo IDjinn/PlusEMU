@@ -44,12 +44,17 @@ public class FigureDataManager : IFigureDataManager
         {
             foreach (XmlNode child in node.ChildNodes)
             {
-                _palettes.Add(Convert.ToInt32(child.Attributes["id"].Value), new Palette(Convert.ToInt32(child.Attributes["id"].Value)));
+                var id = Convert.ToInt32(child.Attributes!["id"]!.Value);
+                var palette = new Palette(id);
+                _palettes.Add(id, palette);
                 foreach (XmlNode sub in child.ChildNodes)
                 {
-                    _palettes[Convert.ToInt32(child.Attributes["id"].Value)].Colors.Add(Convert.ToInt32(sub.Attributes["id"].Value),
-                        new Color(Convert.ToInt32(sub.Attributes["id"].Value), Convert.ToInt32(sub.Attributes["index"].Value), Convert.ToInt32(sub.Attributes["club"].Value),
-                            Convert.ToInt32(sub.Attributes["selectable"].Value) == 1, Convert.ToString(sub.InnerText)));
+                    var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
+                    var subIndex = Convert.ToInt32(sub.Attributes!["index"]!.Value);
+                    var subClubLevel = Convert.ToInt32(sub.Attributes!["club"]!.Value);
+                    var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
+                    var color = new Color(subId, subIndex, subClubLevel, selectable, sub.InnerText);
+                    _palettes[id].Colors.Add(subId, color);
                 }
             }
         }
@@ -58,22 +63,39 @@ public class FigureDataManager : IFigureDataManager
         {
             foreach (XmlNode child in node.ChildNodes)
             {
-                _setTypes.Add(child.Attributes["type"].Value, new FigureSet(SetTypeUtility.GetSetType(child.Attributes["type"].Value), Convert.ToInt32(child.Attributes["paletteid"].Value)));
+                var type = child.Attributes!["type"]!.Value;
+                var setType = SetTypeUtility.GetSetType(type);
+                var paletteId = Convert.ToInt32(child.Attributes!["paletteid"]!.Value);
+                var figureSet = new FigureSet(setType, paletteId);
+                _setTypes.Add(type, figureSet);
                 foreach (XmlNode sub in child.ChildNodes)
                 {
-                    _setTypes[child.Attributes["type"].Value].Sets.Add(Convert.ToInt32(sub.Attributes["id"].Value),
-                        new Set(Convert.ToInt32(sub.Attributes["id"].Value), Convert.ToString(sub.Attributes["gender"].Value), Convert.ToInt32(sub.Attributes["club"].Value),
-                            Convert.ToInt32(sub.Attributes["colorable"].Value) == 1, Convert.ToInt32(sub.Attributes["selectable"].Value) == 1,
-                            Convert.ToInt32(sub.Attributes["preselectable"].Value) == 1));
-                    foreach (XmlNode subb in sub.ChildNodes)
+                    var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
+                    var gender = sub.Attributes!["gender"]!.Value;
+                    var clubLevel = Convert.ToInt32(sub.Attributes!["club"]!.Value);
+                    var colorable = Convert.ToInt32(sub.Attributes!["colorable"]!.Value) == 1;
+                    var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
+                    var preSelectable = Convert.ToInt32(sub.Attributes!["preselectable"]!.Value) == 1;
+
+                    var set = new Set(subId, gender, clubLevel, colorable, selectable, preSelectable);
+                    _setTypes[type].Sets.Add(subId,set);
+                    foreach (XmlNode subPart in sub.ChildNodes)
                     {
-                        if (subb.Attributes["type"] != null)
-                        {
-                            _setTypes[child.Attributes["type"].Value].Sets[Convert.ToInt32(sub.Attributes["id"].Value)].Parts.Add(
-                                Convert.ToInt32(subb.Attributes["id"].Value) + "-" + subb.Attributes["type"].Value,
-                                new Part(Convert.ToInt32(subb.Attributes["id"].Value), SetTypeUtility.GetSetType(child.Attributes["type"].Value),
-                                    Convert.ToInt32(subb.Attributes["colorable"].Value) == 1, Convert.ToInt32(subb.Attributes["index"].Value), Convert.ToInt32(subb.Attributes["colorindex"].Value)));
-                        }
+                        if (subPart.Attributes!["type"] is null)
+                            continue;
+                        
+                        var subPartId = Convert.ToInt32(subPart.Attributes!["id"]!.Value);
+                        var subPartSetType = SetTypeUtility.GetSetType(subPart.Attributes!["type"]!.Value);
+                        var subPartColorable = Convert.ToInt32(subPart.Attributes!["colorable"]!.Value) == 1;
+                        var subPartIndex = Convert.ToInt32(subPart.Attributes!["index"]!.Value);
+                        var subPartColorIndex = Convert.ToInt32(subPart.Attributes!["colorindex"]!.Value);
+
+                        var subPartKey = $"{subPartId}-{subPart.Attributes!["type"]!.Value}";
+                        
+                        var part = new Part(subPartId, subPartSetType, subPartColorable, subPartIndex,
+                            subPartColorIndex);
+                        
+                        _setTypes[type].Sets[subId].Parts.Add(subPartKey, part);
                     }
                 }
             }
