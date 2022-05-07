@@ -81,58 +81,63 @@ public class FigureDataManager : IFigureDataManager
         var validSetTypes = new List<SetType>();
         foreach (var part in parts)
         {
-            var (setType, setId, colorId, secondColorId) = ParseSetPart(part);
-            partBuilder.Clear();
-
-            if (!_setTypes.ContainsKey(setType))
-                continue;
-
-            var _sets = _setTypes[setType];
-            if (!_sets.ContainsKey(setId))
-                continue;
-
-            var set = _sets[setId];
-            if (set.ClubLevel > habbo.VipRank)
-                continue;
-            
-            partBuilder.Append(setType.AsString());
-            partBuilder.Append('-');
-            partBuilder.Append(setId);
-            if(!_palettes.ContainsKey(set.PaletteId))
-                continue;
-            
-            var palette = _palettes[set.PaletteId];
-            if (!palette.Colors.ContainsKey(colorId))
+            try
             {
+                var (setType, setId, colorId, secondColorId) = ParseSetPart(part);
+                partBuilder.Clear();
+
+                if (!_setTypes.ContainsKey(setType))
+                    continue;
+
+                var _sets = _setTypes[setType];
+                if (!_sets.ContainsKey(setId))
+                    continue;
+
+                var set = _sets[setId];
+                if (set.ClubLevel > habbo.VipRank)
+                    continue;
+
+                partBuilder.Append(setType.AsString());
                 partBuilder.Append('-');
-                partBuilder.Append(GetRandomColor(set.PaletteId));
-                goto appendValidPart;
-            }
+                partBuilder.Append(setId);
+                if (!_palettes.ContainsKey(set.PaletteId))
+                    continue;
 
-            var color = palette.Colors[colorId];
-            if (color.ClubLevel > habbo.VipRank)
-            {
-                partBuilder.Append('-');
-                partBuilder.Append(GetRandomColor(set.PaletteId));
-                goto appendValidPart;
-            }
-            
-            partBuilder.Append('-');
-            partBuilder.Append(colorId);
-            if (secondColorId is int secondColor and > 0)
-            {
-                if (set.Colorable && !palette.Colors.ContainsKey(secondColor))
+                var palette = _palettes[set.PaletteId];
+                if (!palette.Colors.ContainsKey(colorId))
+                {
+                    partBuilder.Append('-');
+                    partBuilder.Append(GetRandomColor(set.PaletteId));
                     goto appendValidPart;
-                
+                }
+
+                var color = palette.Colors[colorId];
+                if (color.ClubLevel > habbo.VipRank)
+                {
+                    partBuilder.Append('-');
+                    partBuilder.Append(GetRandomColor(set.PaletteId));
+                    goto appendValidPart;
+                }
+
                 partBuilder.Append('-');
-                partBuilder.Append(secondColor);
+                partBuilder.Append(colorId);
+                if (secondColorId is int secondColor and > 0)
+                {
+                    if (set.Colorable && !palette.Colors.ContainsKey(secondColor))
+                        goto appendValidPart;
+
+                    partBuilder.Append('-');
+                    partBuilder.Append(secondColor);
+                }
+
+                appendValidPart:
+                {
+                    partBuilder.Append('.');
+                    sb.Append(partBuilder);
+                    validSetTypes.Add(setType);
+                }
             }
-            
-            appendValidPart: {
-                partBuilder.Append('.');
-                sb.Append(partBuilder);
-                validSetTypes.Add(setType);
-            }
+            catch (ArgumentOutOfRangeException){}
         }
 
         foreach (var requirement in Requirements)

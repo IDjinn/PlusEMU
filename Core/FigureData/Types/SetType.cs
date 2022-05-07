@@ -17,8 +17,6 @@ public enum SetType
     Wa,
     Cc,
     Cp,
-    
-    //new?
     Hrb,
     Bd,
     Ey,
@@ -64,7 +62,7 @@ public static class SetTypeExtensions
     
     public static SetType ParseFromString(string type) => type.ToLowerInvariant() switch
     {
-        "hr" => SetType.Hr, // 'hr', 'hd', 'ch', 'lg', 'sh', 'ha', 'he', 'ea', 'fa', 'ca', 'wa', 'cc', 'cp'
+        "hr" => SetType.Hr, 
         "hd" => SetType.Hd,
         "ch" => SetType.Ch,
         "lg" => SetType.Lg,
@@ -77,7 +75,6 @@ public static class SetTypeExtensions
         "wa" => SetType.Wa,
         "cc" => SetType.Cc,
         "cp" => SetType.Cp,
-        
         "hrb" => SetType.Hrb,
         "bd" => SetType.Bd,
         "ey" => SetType.Ey,
@@ -88,6 +85,6 @@ public static class SetTypeExtensions
         "rs" => SetType.Rs,
         "lc" => SetType.Lc,
         "rc" => SetType.Rc,
-        _ => throw new ArgumentException("Unknown set type.", nameof(type))
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown set type.")
     };
 }
