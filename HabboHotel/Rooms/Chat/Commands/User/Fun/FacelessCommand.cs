@@ -43,7 +43,7 @@ internal class FacelessCommand : IChatCommand
                 break;
             }
         }
-        session.GetHabbo().Look = _figureDataManager.ProcessFigure(session.GetHabbo(), session.GetHabbo().Look, ClothingGenderExtensions.ParseFromString(session.GetHabbo().Gender), session.GetHabbo().GetClothing().GetClothingParts);
+        session.GetHabbo().Look = _figureDataManager.ValidateFigure(session.GetHabbo(), session.GetHabbo().Look, ClothingGenderExtensions.ParseFromString(session.GetHabbo().Gender), session.GetHabbo().GetClothing().GetClothingParts);
         using (var dbClient = _database.GetQueryReactor())
         {
             dbClient.RunQuery("UPDATE `users` SET `look` = '" + session.GetHabbo().Look + "' WHERE `id` = '" + session.GetHabbo().Id + "' LIMIT 1");

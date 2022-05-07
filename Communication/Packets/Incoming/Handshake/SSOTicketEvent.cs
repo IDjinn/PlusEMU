@@ -73,7 +73,7 @@ public class SsoTicketEvent : IPacketEvent
             }
             if (!PlusEnvironment.GetGame().GetCacheManager().ContainsUser(session.GetHabbo().Id))
                 PlusEnvironment.GetGame().GetCacheManager().GenerateUser(session.GetHabbo().Id);
-            session.GetHabbo().Look = PlusEnvironment.GetFigureManager().ProcessFigure(session.GetHabbo(), session.GetHabbo().Look, ClothingGenderExtensions.ParseFromString(session.GetHabbo().Gender), session.GetHabbo().GetClothing().GetClothingParts);
+            session.GetHabbo().Look = PlusEnvironment.GetFigureManager().ValidateFigure(session.GetHabbo(), session.GetHabbo().Look, ClothingGenderExtensions.ParseFromString(session.GetHabbo().Gender), session.GetHabbo().GetClothing().GetClothingParts);
             session.GetHabbo().InitProcess();
             if (session.GetHabbo().GetPermissions().HasRight("mod_tickets"))
             {

@@ -32,7 +32,7 @@ internal class UpdateFigureDataEvent : IPacketEvent
     {
         var gender = packet.PopString().ToUpper();
         var figureRaw = packet.PopString();
-        var look = _figureManager.ProcessFigure(session.GetHabbo(), figureRaw, ClothingGenderExtensions.ParseFromString(gender), session.GetHabbo().GetClothing().GetClothingParts);
+        var look = _figureManager.ValidateFigure(session.GetHabbo(), figureRaw, ClothingGenderExtensions.ParseFromString(gender), session.GetHabbo().GetClothing().GetClothingParts);
         if (look == session.GetHabbo().Look)
             return Task.CompletedTask;
         if ((DateTime.Now - session.GetHabbo().LastClothingUpdateTime).TotalSeconds <= 2.0)
@@ -52,7 +52,7 @@ internal class UpdateFigureDataEvent : IPacketEvent
             return Task.CompletedTask;
         }
         _questManager.ProgressUserQuest(session, QuestType.ProfileChangeLook);
-        session.GetHabbo().Look = _figureManager.FilterFigure(look);
+        session.GetHabbo().Look = look;
         session.GetHabbo().Gender = gender.ToLower();
         using (var dbClient = _database.GetQueryReactor())
         {

@@ -72,7 +72,7 @@ public class FigureDataManager : IFigureDataManager
         Log.Info("Loaded " + _setTypes.Count + " Set Types");
     }
 
-    public string ProcessFigure(Habbo habbo, string figure, ClothingGender gender,
+    public string ValidateFigure(Habbo habbo, string figure, ClothingGender gender,
         ICollection<ClothingParts> clothingParts)
     {
         var sb = new StringBuilder(figure.Length);
@@ -152,7 +152,7 @@ public class FigureDataManager : IFigureDataManager
         return sb.ToString(0 , sb.Length - 1);
     }
 
-    private string GenerateRandomSet(SetType type, ClothingGender gender)
+    public string GenerateRandomSet(SetType type, ClothingGender gender)
     {
         var (setId, set) = _setTypes[type].Where(x =>
             x.Value.ClubLevel == 0 
@@ -178,7 +178,7 @@ public class FigureDataManager : IFigureDataManager
     /// </example>
     /// <param name="part"></param>
     /// <returns></returns>
-    private static Tuple<SetType, int, int, int?> ParseSetPart(string part)
+    public Tuple<SetType, int, int, int?> ParseSetPart(string part)
     {
         var split = part.Split('-');
         var type = SetTypeExtensions.ParseFromString(split[0]);
@@ -189,17 +189,9 @@ public class FigureDataManager : IFigureDataManager
         return Tuple.Create(type, setId, colorId, secondColorId);
     }
 
-    public Palette GetPalette(int colorId)
-    {
-        return _palettes.FirstOrDefault(x => x.Value.Colors.ContainsKey(colorId)).Value;
-    }
+    public Palette GetPalette(int colorId) => _palettes.FirstOrDefault(x => x.Value.Colors.ContainsKey(colorId)).Value;
 
     public bool TryGetPalette(int palletId, out Palette palette) => _palettes.TryGetValue(palletId, out palette);
 
     public int GetRandomColor(int palletId) => _palettes[palletId].Colors.FirstOrDefault(x => x.Value.ClubLevel == 0).Value.Id;
-
-    public string FilterFigure(string figure)
-    {
-        return StringCharFilter.IsValid(figure) ? figure : IFigureDataManager.DefaultFigure;
-    }
 }
