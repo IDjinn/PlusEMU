@@ -159,69 +159,73 @@ public class FigureDataManager : IFigureDataManager
     {
         var sb = new StringBuilder(figure.Length);
         var parts = figure.Trim().ToLower().Split('.');
+        var partBuilder = new StringBuilder();
+        var validSetTypes = new List<SetType>();
         foreach (var part in parts)
         {
             var (setType, setId, colorId, secondColorId) = ParseSetPart(part);
+            partBuilder.Clear();
 
             if (!_setTypes.ContainsKey(setType))
-                continue; // illegal, we cant filter it out. Should never happen. need logging
+                continue;
 
             var _sets = _setTypes[setType];
             if (!_sets.ContainsKey(setId))
-            {
-                sb.Append(GenerateRandomSet(setType, gender));
-                sb.Append('.');
                 continue;
-            }
 
             var set = _sets[setId];
             if (set.ClubLevel > habbo.VipRank)
-            {
-                sb.Append(GenerateRandomSet(setType, gender));
-                sb.Append('.');
                 continue;
-            }
             
-            sb.Append(setType.ToStringg());
-            sb.Append('-');
-            sb.Append(setId);
+            partBuilder.Append(setType.AsString());
+            partBuilder.Append('-');
+            partBuilder.Append(setId);
             if(!_palettes.ContainsKey(set.PaletteId))
-                continue; // should never happen...
-            
-            var pallete = _palettes[set.PaletteId];
-            if (!pallete.Colors.ContainsKey(colorId))
-            {
-                var something = pallete.Colors.Values.Where(x => x.Id == colorId);
-                sb.Append('-');
-                sb.Append(GetRandomColor(set.PaletteId));
-                sb.Append('.');
                 continue;
+            
+            var palette = _palettes[set.PaletteId];
+            if (!palette.Colors.ContainsKey(colorId))
+            {
+                partBuilder.Append('-');
+                partBuilder.Append(GetRandomColor(set.PaletteId));
+                goto appendValidPart;
             }
 
-            var color = pallete.Colors[colorId];
+            var color = palette.Colors[colorId];
             if (color.ClubLevel > habbo.VipRank)
             {
-                sb.Append('-');
-                sb.Append(GetRandomColor(set.PaletteId));
-                sb.Append('.');
-                continue;
+                partBuilder.Append('-');
+                partBuilder.Append(GetRandomColor(set.PaletteId));
+                goto appendValidPart;
             }
             
-            sb.Append('-');
-            sb.Append(colorId);
+            partBuilder.Append('-');
+            partBuilder.Append(colorId);
             if (secondColorId is int secondColor and > 0)
             {
-                if (set.Colorable && !pallete.Colors.ContainsKey(secondColor)){
-                    sb.Append('.');
-                    continue; // second color may not be available, skip it
-                }
+                if (set.Colorable && !palette.Colors.ContainsKey(secondColor))
+                    goto appendValidPart;
                 
-                sb.Append('-');
-                sb.Append(secondColor);
+                partBuilder.Append('-');
+                partBuilder.Append(secondColor);
             }
-            sb.Append('.');
+            
+            appendValidPart: {
+                partBuilder.Append('.');
+                sb.Append(partBuilder);
+                validSetTypes.Add(setType);
+            }
         }
 
+        foreach (var requirement in Requirements)
+        {
+            if(validSetTypes.Contains(requirement))
+                continue;
+
+            sb.Append(GenerateRandomSet(requirement, gender));
+            sb.Append('.');
+        }
+        
         return sb.ToString(0 , sb.Length - 1);
     }
 
@@ -241,7 +245,7 @@ public class FigureDataManager : IFigureDataManager
     /// </summary>
     /// <example>
     /// <code>
-    /// string part = "hd-180-2";
+    /// string part = "hd-180-2-0";
     /// var (type, id, color, secondColor) = ParseSetType(part);
     /// // type = "hd"
     /// // id = 180

@@ -33,7 +33,7 @@ public enum SetType
 
 public static class SetTypeExtensions
 {
-    public static string ToStringg(this SetType type) => type switch
+    public static string AsString(this SetType type) => type switch
     {
         SetType.Hr => "hr",
         SetType.Hd => "hd",
