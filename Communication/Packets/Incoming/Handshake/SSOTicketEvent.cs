@@ -8,6 +8,7 @@ using Plus.Communication.Packets.Outgoing.Moderation;
 using Plus.Communication.Packets.Outgoing.Navigator;
 using Plus.Communication.Packets.Outgoing.Notifications;
 using Plus.Communication.Packets.Outgoing.Sound;
+using Plus.HabboHotel.Avatar;
 using Plus.HabboHotel.Badges;
 using Plus.HabboHotel.GameClients;
 using Plus.HabboHotel.Users.Authentication;
@@ -72,7 +73,7 @@ public class SsoTicketEvent : IPacketEvent
             }
             if (!PlusEnvironment.GetGame().GetCacheManager().ContainsUser(session.GetHabbo().Id))
                 PlusEnvironment.GetGame().GetCacheManager().GenerateUser(session.GetHabbo().Id);
-            session.GetHabbo().Look = PlusEnvironment.GetFigureManager().ProcessFigure(session.GetHabbo().Look, session.GetHabbo().Gender, session.GetHabbo().GetClothing().GetClothingParts, true);
+            session.GetHabbo().Look = PlusEnvironment.GetFigureManager().ProcessFigure(session.GetHabbo().Look, ClothingGenderExtensions.ParseFromString(session.GetHabbo().Gender), session.GetHabbo().GetClothing().GetClothingParts, true);
             session.GetHabbo().InitProcess();
             if (session.GetHabbo().GetPermissions().HasRight("mod_tickets"))
             {

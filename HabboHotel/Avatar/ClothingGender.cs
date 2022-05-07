@@ -11,7 +11,7 @@ public enum ClothingGender
 
 public static class ClothingGenderExtensions
 {
-    public static ClothingGender ParseFromString(this string gender) => gender switch
+    public static ClothingGender ParseFromString(string gender) => gender switch
     {
         "U" or "u" => ClothingGender.Unisex,
         "M" or "m" => ClothingGender.Male,

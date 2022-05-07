@@ -7,6 +7,7 @@ using Plus.Communication.Packets.Outgoing.Rooms.Engine;
 using Plus.Core.FigureData;
 using Plus.Database;
 using Plus.HabboHotel.Achievements;
+using Plus.HabboHotel.Avatar;
 using Plus.HabboHotel.GameClients;
 using Plus.HabboHotel.Quests;
 
@@ -30,7 +31,8 @@ internal class UpdateFigureDataEvent : IPacketEvent
     public Task Parse(GameClient session, ClientPacket packet)
     {
         var gender = packet.PopString().ToUpper();
-        var look = _figureManager.ProcessFigure(packet.PopString(), gender, session.GetHabbo().GetClothing().GetClothingParts, true);
+        var figureRaw = packet.PopString();
+        var look = _figureManager.ProcessFigure(figureRaw, ClothingGenderExtensions.ParseFromString(gender), session.GetHabbo().GetClothing().GetClothingParts, true);
         if (look == session.GetHabbo().Look)
             return Task.CompletedTask;
         if ((DateTime.Now - session.GetHabbo().LastClothingUpdateTime).TotalSeconds <= 2.0)

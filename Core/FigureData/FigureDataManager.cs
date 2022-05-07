@@ -2,40 +2,52 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Xml;
+using Dapper;
 using NLog;
 using Plus.Core.FigureData.Types;
+using Plus.Database;
+using Plus.HabboHotel.Avatar;
 using Plus.HabboHotel.Users.Clothing.Parts;
 using Plus.Utilities;
 
 namespace Plus.Core.FigureData;
 
+//#define DJINN_FIGURE_MANAGER_INSERT_TEST
+
 public class FigureDataManager : IFigureDataManager
 {
     private static readonly ILogger Log = LogManager.GetLogger("Plus.Core.FigureData");
-    private readonly Dictionary<int, Palette> _palettes; //pallet id, Pallet
+    private readonly Dictionary<int, Palette> _palettes = new(); //pallet id, Pallet
 
-    private readonly List<string> _requirements;
-    private readonly Dictionary<string, FigureSet> _setTypes; //type (hr, ch, etc), Set
+    private static readonly SetType[] Requirements = {
+        SetType.Hd,
+        SetType.Ch,
+        SetType.Lg,
+    };
+    
+    private readonly Dictionary<SetType, Dictionary<int, FigureSet>> _setTypes = new(); //type (hr, ch, etc), Set
 
-    public FigureDataManager()
+    private readonly IDatabase db;
+    
+    public FigureDataManager(IDatabase db)
     {
-        _palettes = new Dictionary<int, Palette>();
-        _setTypes = new Dictionary<string, FigureSet>();
-        _requirements = new List<string>
-        {
-            "hd",
-            "ch",
-            "lg"
-        };
+        this.db = db;
     }
+
 
     public void Init()
     {
-        if (_palettes.Count > 0)
-            _palettes.Clear();
-        if (_setTypes.Count > 0)
-            _setTypes.Clear();
+        if (_setTypes.Any()) _setTypes.Clear();
+        if (_palettes.Any()) _palettes.Clear();
+        using var connection = db.Connection();
+
+        foreach (var setType in Enum.GetValues<SetType>())
+        {
+            _setTypes[setType] = new Dictionary<int, FigureSet>();
+        }
+
         var projectSolutionPath = Directory.GetCurrentDirectory();
         var xDoc = new XmlDocument();
         xDoc.Load(projectSolutionPath + "//Config//figuredata.xml");
@@ -58,16 +70,14 @@ public class FigureDataManager : IFigureDataManager
                 }
             }
         }
+
         var sets = xDoc.GetElementsByTagName("sets");
         foreach (XmlNode node in sets)
         {
             foreach (XmlNode child in node.ChildNodes)
             {
-                var type = child.Attributes!["type"]!.Value;
-                var setType = SetTypeUtility.GetSetType(type);
+                var setType = SetTypeExtensions.ParseFromString(child.Attributes!["type"]!.Value);
                 var paletteId = Convert.ToInt32(child.Attributes!["paletteid"]!.Value);
-                var figureSet = new FigureSet(setType, paletteId);
-                _setTypes.Add(type, figureSet);
                 foreach (XmlNode sub in child.ChildNodes)
                 {
                     var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
@@ -77,45 +87,138 @@ public class FigureDataManager : IFigureDataManager
                     var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
                     var preSelectable = Convert.ToInt32(sub.Attributes!["preselectable"]!.Value) == 1;
 
-                    var set = new Set(subId, gender, clubLevel, colorable, selectable, preSelectable);
-                    _setTypes[type].Sets.Add(subId,set);
+                    var set = new FigureSet(subId, setType, paletteId, gender, clubLevel, colorable, selectable,
+                        preSelectable, new());
+                    _setTypes[setType].Add(subId, set);
                     foreach (XmlNode subPart in sub.ChildNodes)
                     {
                         if (subPart.Attributes!["type"] is null)
                             continue;
-                        
+
                         var subPartId = Convert.ToInt32(subPart.Attributes!["id"]!.Value);
-                        var subPartSetType = SetTypeUtility.GetSetType(subPart.Attributes!["type"]!.Value);
-                        var subPartColorable = Convert.ToInt32(subPart.Attributes!["colorable"]!.Value) == 1;
+                        var subPartSetType =
+                            SetTypeExtensions.ParseFromString(subPart.Attributes!["type"]!.Value);
+                        var subPartColorable =
+                            Convert.ToInt32(subPart.Attributes!["colorable"]!.Value) == 1;
                         var subPartIndex = Convert.ToInt32(subPart.Attributes!["index"]!.Value);
                         var subPartColorIndex = Convert.ToInt32(subPart.Attributes!["colorindex"]!.Value);
 
                         var subPartKey = $"{subPartId}-{subPart.Attributes!["type"]!.Value}";
-                        
+
                         var part = new Part(subPartId, subPartSetType, subPartColorable, subPartIndex,
                             subPartColorIndex);
-                        
-                        _setTypes[type].Sets[subId].Parts.Add(subPartKey, part);
+
+                        _setTypes[setType][subId].Parts.Add(subPartKey, part);
                     }
                 }
             }
         }
 
         //Faceless.
-        _setTypes["hd"].Sets.Add(99999, new Set(99999, "U", 0, true, false, false));
+        _setTypes[SetType.Hd].Add(99999, new FigureSet(99999, SetType.Hd, 99999, "U", 0, true, false, false, new()));
+        
+        #if DJINN_FIGURE_MANAGER_INSERT_TEST 
+        foreach (var (setType, _sets) in _setTypes)
+        {
+            foreach (var (setId, set) in _sets)
+            {
+                const string query =
+                    @"INSERT INTO `clothing_sets` (set_id, type, palette_id, gender, club_level, colorable, selectable, pre_selectable) VALUE 
+                (@set_id, @type, @palette_id, @gender, @club_level, @colorable, @selectable, @pre_selectable);";
+
+                try
+                {
+                    connection.Execute(query, new
+                    {
+                        set_id = set.Id,
+                        type = set.Type.ToString(),
+                        palette_id = set.PaletteId,
+                        gender = set.Gender,
+                        club_level = set.ClubLevel,
+                        colorable = set.Colorable,
+                        selectable = set.Selectable,
+                        pre_selectable = set.PreSelectable
+                    });
+                }
+                catch (Exception e)
+                {
+                }
+               
+            }
+        }
+        #endif
+        
         Log.Info("Loaded " + _palettes.Count + " Color Palettes");
         Log.Info("Loaded " + _setTypes.Count + " Set Types");
     }
 
-    public string ProcessFigure(string figure, string gender, ICollection<ClothingParts> clothingParts, bool hasHabboClub)
+    public string ProcessFigure(string figure, ClothingGender gender, ICollection<ClothingParts> clothingParts,
+        bool hasHabboClub)
     {
         figure = figure.ToLower();
-        gender = gender.ToUpper();
-        var rebuildFigure = string.Empty;
+
+        var sb = new StringBuilder(figure.Length);
+        var rebuildFigure = figure;
+
         var figureParts = figure.Split('.');
+        // first we will split all parts of figure, check if we have that in our hotel
+        // if some part of figure hasn't been found in database, we will filter it out
+        // and rebuild figure without it
+        var parts = figure.Trim().Split('.');
+        var sets = new Dictionary<SetType, string>(parts.Length);
+        foreach (var part in parts)
+        {
+            var (setType, setId, colorId, secondColorId) = ParseSetPart(part);
+
+            if (!_setTypes.ContainsKey(setType))
+                goto giveRandomSet; // illegal, should be filtered out
+
+            var _sets = _setTypes[setType];
+            if (!_sets.ContainsKey(setId))
+                goto giveRandomSet; // illegal
+
+            var set = _sets[setId];
+            if (set.ClubLevel > 0 && !hasHabboClub)
+                goto giveRandomSet; // illegal
+            
+            sb.Append(setType.ToString());
+            sb.Append('-');
+            sb.Append(setId);
+            if(!_palettes.ContainsKey(set.PaletteId))
+                goto giveRandomColor;
+            
+            var pallete = _palettes[set.PaletteId];
+            if (!pallete.Colors.ContainsKey(colorId))
+                goto giveRandomColor;
+
+            sb.Append('-');
+            sb.Append(colorId);
+            if (secondColorId is int secondColor and > 0)
+            {
+                if (set.Colorable && !pallete.Colors.ContainsKey(secondColor))
+                    goto giveRandomColor;
+                
+                sb.Append('-');
+                sb.Append(secondColor);
+            }
+
+            continue;
+            giveRandomSet:
+            {
+                continue;
+            }
+            
+            giveRandomColor:
+            {
+                continue;
+            }
+        }
+
+
+        /*
         foreach (var part in figureParts.ToList())
         {
-            var type = part.Split('-')[0];
+            var type = SetTypeUtility.GetSetType(part.Split('-')[0]);
             if (_setTypes.TryGetValue(type, out var figureSet))
             {
                 var partId = Convert.ToInt32(part.Split('-')[1]);
@@ -181,10 +284,11 @@ public class FigureDataManager : IFigureDataManager
                     }
                     else
                     {
-                        var ignore = new[] { "ca", "wa" };
-                        if (ignore.Contains(type))
+                        if (type is SetType.Ca or SetType.Wa)
+                        {
                             if (!string.IsNullOrEmpty(part.Split('-')[2]))
                                 colorId = Convert.ToInt32(part.Split('-')[2]);
+                        }
                     }
                     if (set.ClubLevel > 0 && !hasHabboClub)
                     {
@@ -192,18 +296,17 @@ public class FigureDataManager : IFigureDataManager
                         figureSet.Sets.TryGetValue(partId, out set);
                         colorId = GetRandomColor(figureSet.PalletId);
                     }
-                    if (secondColorId == 0)
-                        rebuildFigure = rebuildFigure + type + "-" + partId + "-" + colorId + ".";
-                    else
-                        rebuildFigure = rebuildFigure + type + "-" + partId + "-" + colorId + "-" + secondColorId + ".";
+                    rebuildFigure = secondColorId == 0 
+                        ? $"{rebuildFigure}{type}-{partId}-{colorId}." 
+                        : $"{rebuildFigure}{type}-{partId}-{colorId}-{secondColorId}.";
                 }
             }
         }
-        foreach (var requirement in _requirements)
+        foreach (var requirement in Requirements)
         {
-            if (!rebuildFigure.Contains(requirement))
+           /* if (!rebuildFigure.Contains(requirement))
             {
-                if (requirement == "ch" && gender == "M")
+                if (requirement == SetType.Ch && gender == "M")
                     continue;
                 if (_setTypes.TryGetValue(requirement, out var figureSet))
                 {
@@ -212,10 +315,10 @@ public class FigureDataManager : IFigureDataManager
                     {
                         var partId = figureSet.Sets.FirstOrDefault(x => x.Value.Gender == gender || x.Value.Gender == "U").Value.Id;
                         var colorId = GetRandomColor(figureSet.PalletId);
-                        rebuildFigure = rebuildFigure + requirement + "-" + partId + "-" + colorId + ".";
+                        rebuildFigure = $"{rebuildFigure}{requirement}-{partId}-{colorId}.";
                     }
                 }
-            }
+            }*
         }
         if (clothingParts != null)
         {
@@ -228,7 +331,7 @@ public class FigureDataManager : IFigureDataManager
                 {
                     if (clothingParts.Count(x => x.PartId == partId) == 0)
                     {
-                        var type = part.Split('-')[0];
+                        var type = SetTypeUtility.GetSetType(part.Split('-')[0]);
                         if (_setTypes.TryGetValue(type, out var figureSet))
                         {
                             var set = figureSet.Sets.FirstOrDefault(x => x.Value.Gender == gender || x.Value.Gender == "U").Value;
@@ -236,14 +339,40 @@ public class FigureDataManager : IFigureDataManager
                             {
                                 partId = figureSet.Sets.FirstOrDefault(x => x.Value.Gender == gender || x.Value.Gender == "U").Value.Id;
                                 var colorId = GetRandomColor(figureSet.PalletId);
-                                rebuildFigure = rebuildFigure + type + "-" + partId + "-" + colorId + ".";
+                                rebuildFigure = $"{rebuildFigure}{type}-{partId}-{colorId}.";
                             }
                         }
                     }
                 }
             }
-        }
+        }*/
         return rebuildFigure;
+    }
+
+    /// <summary>
+    /// Parse a set type from a figure string.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// string part = "hd-180-2";
+    /// var (type, id, color, secondColor) = ParseSetType(part);
+    /// // type = "hd"
+    /// // id = 180
+    /// // color = 2
+    /// // secondColor = 0
+    /// </code>
+    /// </example>
+    /// <param name="part"></param>
+    /// <returns></returns>
+    private static Tuple<SetType, int, int, int?> ParseSetPart(string part)
+    {
+        var split = part.Split('-');
+        var type = SetTypeExtensions.ParseFromString(split[0]);
+        var setId = Convert.ToInt32(split[1]);
+        var colorId = Convert.ToInt32(split[2]);
+        int? secondColorId = split.Length > 3 ? Convert.ToInt32(split[3]) : null;
+        
+        return Tuple.Create(type, setId, colorId, secondColorId);
     }
 
     public Palette GetPalette(int colorId)
