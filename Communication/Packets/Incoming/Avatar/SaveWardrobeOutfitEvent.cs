@@ -26,7 +26,7 @@ internal class SaveWardrobeOutfitEvent : IPacketEvent
         var look = packet.PopString();
         var rawGender = packet.PopString();
         var gender = ClothingGenderExtensions.ParseFromString(rawGender);
-        var processedLook = _figureDataManager.ProcessFigure(look, gender, session.GetHabbo().GetClothing().GetClothingParts, true);
+        var processedLook = _figureDataManager.ProcessFigure(session.GetHabbo(), look, gender, session.GetHabbo().GetClothing().GetClothingParts);
         
         return _wardrobeManager.SaveWardrobe(session.GetHabbo(), slotId, processedLook, rawGender);
     }

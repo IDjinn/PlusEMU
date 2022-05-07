@@ -9,6 +9,7 @@ using NLog;
 using Plus.Core.FigureData.Types;
 using Plus.Database;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.Users;
 using Plus.HabboHotel.Users.Clothing.Parts;
 using Plus.Utilities;
 using Plus.Utilities.Collections;
@@ -153,8 +154,8 @@ public class FigureDataManager : IFigureDataManager
         Log.Info("Loaded " + _setTypes.Count + " Set Types");
     }
 
-    public string ProcessFigure(string figure, ClothingGender gender, ICollection<ClothingParts> clothingParts,
-        bool hasHabboClub)
+    public string ProcessFigure(Habbo habbo, string figure, ClothingGender gender,
+        ICollection<ClothingParts> clothingParts)
     {
         var sb = new StringBuilder(figure.Length);
         var parts = figure.Trim().ToLower().Split('.');
@@ -174,7 +175,7 @@ public class FigureDataManager : IFigureDataManager
             }
 
             var set = _sets[setId];
-            if (set.ClubLevel > 0 && !hasHabboClub)
+            if (set.ClubLevel > habbo.VipRank)
             {
                 sb.Append(GenerateRandomSet(setType, gender));
                 sb.Append('.');
@@ -197,6 +198,15 @@ public class FigureDataManager : IFigureDataManager
                 continue;
             }
 
+            var color = pallete.Colors[colorId];
+            if (color.ClubLevel > habbo.VipRank)
+            {
+                sb.Append('-');
+                sb.Append(GetRandomColor(set.PaletteId));
+                sb.Append('.');
+                continue;
+            }
+            
             sb.Append('-');
             sb.Append(colorId);
             if (secondColorId is int secondColor and > 0)
@@ -218,7 +228,8 @@ public class FigureDataManager : IFigureDataManager
     private string GenerateRandomSet(SetType type, ClothingGender gender)
     {
         var (setId, set) = _setTypes[type].Where(x =>
-            x.Value.Gender == ClothingGender.Unisex || x.Value.Gender == gender
+            x.Value.ClubLevel == 0 
+            && x.Value.Gender == ClothingGender.Unisex || x.Value.Gender == gender
         ).GetRandomValue();
         
         var color = GetRandomColor(set.PaletteId);
@@ -258,7 +269,7 @@ public class FigureDataManager : IFigureDataManager
 
     public bool TryGetPalette(int palletId, out Palette palette) => _palettes.TryGetValue(palletId, out palette);
 
-    public int GetRandomColor(int palletId) => _palettes[palletId].Colors.FirstOrDefault().Value.Id;
+    public int GetRandomColor(int palletId) => _palettes[palletId].Colors.FirstOrDefault(x => x.Value.ClubLevel == 0).Value.Id;
 
     public string FilterFigure(string figure)
     {
