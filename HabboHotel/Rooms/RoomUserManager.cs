@@ -128,6 +128,9 @@ public class RoomUserManager
             return false;
         if (session.GetHabbo().CurrentRoom == null)
             return false;
+        if (_users.Values.Any(x => x.HabboId == session.GetHabbo().Id))
+            return false;
+        
         var user = new RoomUser(session.GetHabbo().Id, _room.RoomId, _primaryPrivateUserId++, _room);
         if (user == null || user.GetClient() == null)
             return false;
