@@ -260,10 +260,10 @@ public class Habbo
         get
         {
             _habboSaved = true;
-            return "UPDATE `users` SET `online` = '0', `last_online` = '" + UnixTimestamp.GetNow() + "', `activity_points` = '" + Duckets + "', `credits` = '" + Credits +
+            return "UPDATE `users` SET `online` = '0', `last_online` = '" + (int)UnixTimestamp.GetNow() + "', `activity_points` = '" + Duckets + "', `credits` = '" + Credits +
                    "', `vip_points` = '" + Diamonds + "', `home_room` = '" + HomeRoom + "', `gotw_points` = '" + GotwPoints + "', `time_muted` = '" + TimeMuted + "',`friend_bar_state` = '" +
                    FriendBarStateUtility.GetInt(FriendbarState) + "' WHERE id = '" + Id + "' LIMIT 1;UPDATE `user_stats` SET `roomvisits` = '" + _habboStats.RoomVisits + "', `onlineTime` = '" +
-                   (UnixTimestamp.GetNow() - SessionStart + _habboStats.OnlineTime) + "', `respect` = '" + _habboStats.Respect + "', `respectGiven` = '" + _habboStats.RespectGiven +
+                   (int)(UnixTimestamp.GetNow() - SessionStart + _habboStats.OnlineTime) + "', `respect` = '" + _habboStats.Respect + "', `respectGiven` = '" + _habboStats.RespectGiven +
                    "', `giftsGiven` = '" + _habboStats.GiftsGiven + "', `giftsReceived` = '" + _habboStats.GiftsReceived + "', `dailyRespectPoints` = '" + _habboStats.DailyRespectPoints +
                    "', `dailyPetRespectPoints` = '" + _habboStats.DailyPetRespectPoints + "', `AchievementScore` = '" + _habboStats.AchievementPoints + "', `quest_id` = '" + _habboStats.QuestId +
                    "', `quest_progress` = '" + _habboStats.QuestProgress + "', `groupid` = '" + _habboStats.FavouriteGroupId + "',`forum_posts` = '" + _habboStats.ForumPosts + "' WHERE `id` = '" +
