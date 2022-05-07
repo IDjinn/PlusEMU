@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using Plus.HabboHotel.Avatar;
 
 namespace Plus.Core.FigureData.Types;
 
@@ -6,7 +7,7 @@ internal record FigureSet(
     int Id, 
     SetType Type,
     int PaletteId, 
-    string Gender, 
+    ClothingGender Gender, 
     int ClubLevel, 
     bool Colorable, 
     bool Selectable, 
