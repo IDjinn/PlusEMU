@@ -128,6 +128,11 @@ public class RoomUserManager
             return false;
         if (session.GetHabbo().CurrentRoom == null)
             return false;
+        
+        // TODO: After room user manager and room joiner refractored, this should be removed or moved from here...
+        // GetRoomEntryDataEvent tried to enter in the room twice or three times at same time. Every time new room user is created.
+        // (check https://github.com/80O/PlusEMU/issues/44#issuecomment-1109187914 for more info)
+        // Thanks for Damien#7670
         if (_users.Values.Any(x => x.HabboId == session.GetHabbo().Id))
             return false;
         
