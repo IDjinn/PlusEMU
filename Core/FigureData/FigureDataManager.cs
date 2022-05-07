@@ -237,7 +237,7 @@ public class FigureDataManager : IFigureDataManager
         ).GetRandomValue();
         
         var color = GetRandomColor(set.PaletteId);
-        return $"{type}-{setId}-{color}";
+        return $"{type.AsString()}-{setId}-{color}";
     }
 
     /// <summary>
