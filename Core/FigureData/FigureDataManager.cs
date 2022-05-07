@@ -21,7 +21,8 @@ namespace Plus.Core.FigureData;
 public class FigureDataManager : IFigureDataManager
 {
     private static readonly ILogger Log = LogManager.GetLogger("Plus.Core.FigureData");
-    private readonly Dictionary<int, Palette> _palettes = new(); //pallet id, Pallet
+    private readonly Dictionary<SetType, Dictionary<int, FigureSet>> _setTypes = new();
+    private readonly Dictionary<int, Palette> _palettes = new();
 
     private static readonly SetType[] Requirements = {
         SetType.Hd,
@@ -29,7 +30,6 @@ public class FigureDataManager : IFigureDataManager
         SetType.Lg,
     };
     
-    private readonly Dictionary<SetType, Dictionary<int, FigureSet>> _setTypes = new(); //type (hr, ch, etc), Set
 
     private readonly IDatabase db;
     
@@ -43,112 +43,30 @@ public class FigureDataManager : IFigureDataManager
     {
         if (_setTypes.Any()) _setTypes.Clear();
         if (_palettes.Any()) _palettes.Clear();
-        using var connection = db.Connection();
 
         foreach (var setType in Enum.GetValues<SetType>())
         {
             _setTypes[setType] = new Dictionary<int, FigureSet>();
         }
-
-        var projectSolutionPath = Directory.GetCurrentDirectory();
-        var xDoc = new XmlDocument();
-        xDoc.Load(projectSolutionPath + "//Config//figuredata.xml");
-        var colors = xDoc.GetElementsByTagName("colors");
-        foreach (XmlNode node in colors)
-        {
-            foreach (XmlNode child in node.ChildNodes)
-            {
-                var id = Convert.ToInt32(child.Attributes!["id"]!.Value);
-                var palette = new Palette(id);
-                _palettes.Add(id, palette);
-                foreach (XmlNode sub in child.ChildNodes)
-                {
-                    var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
-                    var subIndex = Convert.ToInt32(sub.Attributes!["index"]!.Value);
-                    var subClubLevel = Convert.ToInt32(sub.Attributes!["club"]!.Value);
-                    var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
-                    var color = new Color(subId, subIndex, subClubLevel, selectable, sub.InnerText);
-                    _palettes[id].Colors.Add(subId, color);
-                }
-            }
-        }
-
-        var sets = xDoc.GetElementsByTagName("sets");
-        foreach (XmlNode node in sets)
-        {
-            foreach (XmlNode child in node.ChildNodes)
-            {
-                var setType = SetTypeExtensions.ParseFromString(child.Attributes!["type"]!.Value);
-                var paletteId = Convert.ToInt32(child.Attributes!["paletteid"]!.Value);
-                foreach (XmlNode sub in child.ChildNodes)
-                {
-                    var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
-                    var gender = sub.Attributes!["gender"]!.Value;
-                    var clubLevel = Convert.ToInt32(sub.Attributes!["club"]!.Value);
-                    var colorable = Convert.ToInt32(sub.Attributes!["colorable"]!.Value) == 1;
-                    var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
-                    var preSelectable = Convert.ToInt32(sub.Attributes!["preselectable"]!.Value) == 1;
-
-                    var set = new FigureSet(subId, setType, paletteId, ClothingGenderExtensions.ParseFromString(gender), clubLevel, colorable, selectable,
-                        preSelectable, new());
-                    _setTypes[setType].Add(subId, set);
-                    foreach (XmlNode subPart in sub.ChildNodes)
-                    {
-                        if (subPart.Attributes!["type"] is null)
-                            continue;
-
-                        var subPartId = Convert.ToInt32(subPart.Attributes!["id"]!.Value);
-                        var subPartSetType =
-                            SetTypeExtensions.ParseFromString(subPart.Attributes!["type"]!.Value);
-                        var subPartColorable =
-                            Convert.ToInt32(subPart.Attributes!["colorable"]!.Value) == 1;
-                        var subPartIndex = Convert.ToInt32(subPart.Attributes!["index"]!.Value);
-                        var subPartColorIndex = Convert.ToInt32(subPart.Attributes!["colorindex"]!.Value);
-
-                        var subPartKey = $"{subPartId}-{subPart.Attributes!["type"]!.Value}";
-
-                        var part = new Part(subPartId, subPartSetType, subPartColorable, subPartIndex,
-                            subPartColorIndex);
-
-                        _setTypes[setType][subId].Parts.Add(subPartKey, part);
-                    }
-                }
-            }
-        }
-
-        //Faceless.
-        _setTypes[SetType.Hd].Add(99999, new FigureSet(99999, SetType.Hd, 99999, ClothingGender.Unisex, 0, true, false, false, new()));
         
-        #if DJINN_FIGURE_MANAGER_INSERT_TEST 
-        foreach (var (setType, _sets) in _setTypes)
+        using var connection = db.Connection();
+        var sets = connection.Query("SELECT * FROM figure_sets");
+        foreach (var setObj in sets)
         {
-            foreach (var (setId, set) in _sets)
+            var figureSet = new FigureSet
             {
-                const string query =
-                    @"INSERT INTO `clothing_sets` (set_id, type, palette_id, gender, club_level, colorable, selectable, pre_selectable) VALUE 
-                (@set_id, @type, @palette_id, @gender, @club_level, @colorable, @selectable, @pre_selectable);";
-
-                try
-                {
-                    connection.Execute(query, new
-                    {
-                        set_id = set.Id,
-                        type = set.Type.ToString(),
-                        palette_id = set.PaletteId,
-                        gender = set.Gender,
-                        club_level = set.ClubLevel,
-                        colorable = set.Colorable,
-                        selectable = set.Selectable,
-                        pre_selectable = set.PreSelectable
-                    });
-                }
-                catch (Exception e)
-                {
-                }
-               
-            }
+                Id = setObj.id,
+                Type = SetTypeExtensions.ParseFromString(setObj.type),
+                PaletteId = setObj.palette_id,
+                Gender = ClothingGenderExtensions.ParseFromString(setObj.gender),
+                ClubLevel = setObj.club_level,
+                Colorable = (bool) setObj.colorable,
+                Selectable = (bool) setObj.selectable,
+                PreSelectable = (bool) setObj.pre_selectable,
+            };
+            
+            _setTypes[figureSet.Type][figureSet.Id] = figureSet;
         }
-        #endif
         
         Log.Info("Loaded " + _palettes.Count + " Color Palettes");
         Log.Info("Loaded " + _setTypes.Count + " Set Types");

@@ -1,6 +1,6 @@
 ﻿namespace Plus.Core.FigureData.Types;
 
-internal class Part
+public class Part
 {
     public Part(int id, SetType setType, bool colorable, int index, int colorIndex)
     {
