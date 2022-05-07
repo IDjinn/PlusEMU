@@ -23,7 +23,7 @@ internal class GetRoomEntryDataEvent : IPacketEvent
         var room = session.GetHabbo().CurrentRoom;
         if (room == null)
             return Task.CompletedTask;
-        if (!room.GetRoomUserManager().AddAvatarToRoom(session))
+        if (!room.GetRoomUserManager().TryAddAvatarToRoom(session))
         {
             room.GetRoomUserManager().RemoveUserFromRoom(session, false);
             return Task.CompletedTask; //TODO: Remove?

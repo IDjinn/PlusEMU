@@ -120,12 +120,8 @@ public class RoomUserManager
 
     public RoomUser GetUserForSquare(int x, int y) => _room.GetGameMap().GetRoomUsers(new Point(x, y)).FirstOrDefault();
 
-    public bool AddAvatarToRoom(GameClient session)
+    public bool TryAddAvatarToRoom(GameClient session)
     {
-        if (_room == null)
-            return false;
-        if (session == null)
-            return false;
         if (session.GetHabbo().CurrentRoom == null)
             return false;
         
@@ -137,8 +133,9 @@ public class RoomUserManager
             return false;
         
         var user = new RoomUser(session.GetHabbo().Id, _room.RoomId, _primaryPrivateUserId++, _room);
-        if (user == null || user.GetClient() == null)
+        if (user.GetClient() == null)
             return false;
+        
         user.UserId = session.GetHabbo().Id;
         session.GetHabbo().TentId = 0;
         var personalId = _secondaryPrivateUserId++;
@@ -146,11 +143,14 @@ public class RoomUserManager
         session.GetHabbo().CurrentRoomId = _room.RoomId;
         if (!_users.TryAdd(personalId, user))
             return false;
+        
         var model = _room.GetGameMap().Model;
         if (model == null)
             return false;
+        
         if (!_room.PetMorphsAllowed && session.GetHabbo().PetId != 0)
             session.GetHabbo().PetId = 0;
+        
         if (!session.GetHabbo().IsTeleporting && !session.GetHabbo().IsHopping)
         {
             if (!model.DoorIsValid())
@@ -222,6 +222,7 @@ public class RoomUserManager
         user.UpdateNeeded = true;
         if (session.GetHabbo().GetPermissions().HasRight("mod_tool") && !session.GetHabbo().DisableForcedEffects)
             session.GetHabbo().Effects().ApplyEffect(102);
+        
         foreach (var bot in _bots.Values.ToList())
         {
             if (bot == null || bot.BotAi == null)
