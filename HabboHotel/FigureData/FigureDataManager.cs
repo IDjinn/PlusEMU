@@ -20,21 +20,15 @@ public class FigureDataManager : IFigureDataManager
     private static readonly ILogger Log = LogManager.GetLogger("Plus.Core.FigureData");
     private readonly Dictionary<SetType, Dictionary<int, FigureSet>> _setTypes = new();
     private readonly Dictionary<int, Palette> _palettes = new();
-
+    private readonly IDatabase _database;
+    
     private static readonly SetType[] Requirements = {
         SetType.Hd,
         SetType.Ch,
         SetType.Lg,
     };
     
-
-    private readonly IDatabase db;
-    
-    public FigureDataManager(IDatabase db)
-    {
-        this.db = db;
-    }
-
+    public FigureDataManager(IDatabase database) => _database = database;
 
     public void Init()
     {
@@ -46,7 +40,7 @@ public class FigureDataManager : IFigureDataManager
             _setTypes[setType] = new Dictionary<int, FigureSet>();
         }
         
-        using var connection = db.Connection();
+        using var connection = _database.Connection();
         var sets = connection.Query("SELECT * FROM figure_sets");
         foreach (var setObj in sets)
         {
@@ -183,21 +177,7 @@ public class FigureDataManager : IFigureDataManager
         return $"{type.AsString()}-{setId}-{color}";
     }
 
-    /// <summary>
-    /// Parse a set type from a figure string.
-    /// </summary>
-    /// <example>
-    /// <code>
-    /// string part = "hd-180-2-0";
-    /// var (type, id, color, secondColor) = ParseSetType(part);
-    /// // type = "hd"
-    /// // id = 180
-    /// // color = 2
-    /// // secondColor = 0
-    /// </code>
-    /// </example>
-    /// <param name="part"></param>
-    /// <returns></returns>
+  
     public Tuple<SetType, int, int, int?> ParseSetPart(string part)
     {
         var split = part.Split('-');

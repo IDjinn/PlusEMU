@@ -16,7 +16,22 @@ public interface IFigureDataManager
         ICollection<ClothingParts> clothingParts);
     Palette GetPalette(int colorId);
     bool TryGetPalette(int palletId, out Palette palette);
-    int GetRandomColor(int palletId);
+    int GetRandomColor(int palletId); 
+    
+    /// <summary>
+    /// Parse a set type from a figure string.
+    /// </summary>
+    /// <example>
+    /// <code>
+    /// string part = "hd-180-2-0";
+    /// var (type, id, color, secondColor) = ParseSetType(part);
+    /// // type = "hd"
+    /// // id = 180
+    /// // color = 2
+    /// // secondColor = 0
+    /// </code>
+    /// </example>
+    /// <returns>SetType, SetId, Color, SecondColor</returns>
     public Tuple<SetType, int, int, int?> ParseSetPart(string part);
     public string GenerateRandomSet(SetType type, ClothingGender gender);
 }
