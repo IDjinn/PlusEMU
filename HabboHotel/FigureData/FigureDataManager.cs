@@ -183,7 +183,7 @@ public class FigureDataManager : IFigureDataManager
         var split = part.Split('-');
         var type = SetTypeExtensions.ParseFromString(split[0]);
         var setId = Convert.ToInt32(split[1]);
-        var colorId = Convert.ToInt32(split[2]);
+        var colorId = split.Length > 2 ? Convert.ToInt32(split[2]) : 0;
         int? secondColorId = split.Length > 3 ? Convert.ToInt32(split[3]) : null;
         
         return Tuple.Create(type, setId, colorId, secondColorId);
