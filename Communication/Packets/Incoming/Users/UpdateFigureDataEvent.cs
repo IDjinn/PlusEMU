@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 using Plus.Communication.Packets.Outgoing.Moderation;
 using Plus.Communication.Packets.Outgoing.Rooms.Avatar;
 using Plus.Communication.Packets.Outgoing.Rooms.Engine;
-using Plus.Core.FigureData;
 using Plus.Database;
 using Plus.HabboHotel.Achievements;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.FigureData;
 using Plus.HabboHotel.GameClients;
 using Plus.HabboHotel.Quests;
 

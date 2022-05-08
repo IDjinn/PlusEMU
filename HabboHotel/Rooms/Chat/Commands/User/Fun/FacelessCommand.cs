@@ -1,7 +1,7 @@
 ﻿using Plus.Communication.Packets.Outgoing.Rooms.Engine;
-using Plus.Core.FigureData;
 using Plus.Database;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.FigureData;
 using Plus.HabboHotel.GameClients;
 
 namespace Plus.HabboHotel.Rooms.Chat.Commands.User.Fun;

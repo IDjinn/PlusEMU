@@ -1,11 +1,11 @@
 ﻿using System.Linq;
 using Plus.Communication.Packets.Outgoing.Catalog;
-using Plus.Core.FigureData;
 using Plus.Core.Settings;
 using Plus.HabboHotel.Achievements;
 using Plus.HabboHotel.Badges;
 using Plus.HabboHotel.Bots;
 using Plus.HabboHotel.Catalog;
+using Plus.HabboHotel.FigureData;
 using Plus.HabboHotel.GameClients;
 using Plus.HabboHotel.Games;
 using Plus.HabboHotel.Items;

@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using Plus.Core.FigureData.Types;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.FigureData.Types;
 using Plus.HabboHotel.Users;
 using Plus.HabboHotel.Users.Clothing.Parts;
 
-namespace Plus.Core.FigureData;
+namespace Plus.HabboHotel.FigureData;
 
 public interface IFigureDataManager
 {

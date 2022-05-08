@@ -14,11 +14,11 @@ using Plus.Communication.Encryption.Keys;
 using Plus.Communication.Packets.Outgoing.Moderation;
 using Plus.Communication.Rcon;
 using Plus.Core;
-using Plus.Core.FigureData;
 using Plus.Core.Language;
 using Plus.Core.Settings;
 using Plus.Database;
 using Plus.HabboHotel;
+using Plus.HabboHotel.FigureData;
 using Plus.HabboHotel.Users;
 using Plus.HabboHotel.Users.UserData;
 

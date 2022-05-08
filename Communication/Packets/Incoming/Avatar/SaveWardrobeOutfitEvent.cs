@@ -1,10 +1,10 @@
 ﻿using System.Threading.Tasks;
-using Plus.Core.FigureData;
 using Plus.Database;
 using Plus.HabboHotel.GameClients;
 
 using Dapper;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.FigureData;
 using Plus.HabboHotel.Users;
 
 namespace Plus.Communication.Packets.Incoming.Avatar;

@@ -6,9 +6,9 @@ using System.Xml;
 using Dapper;
 using NLog;
 using NLog.Fluent;
-using Plus.Core.FigureData.Types;
 using Plus.Database;
 using Plus.HabboHotel.Avatar;
+using Plus.HabboHotel.FigureData.Types;
 
 namespace Plus.Utilities.Figuredata
 {
