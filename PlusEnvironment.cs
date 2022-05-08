@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
 using NLog;
+using Plus.Communication;
 using Plus.Communication.ConnectionManager;
 using Plus.Communication.Encryption;
 using Plus.Communication.Encryption.Keys;
@@ -35,7 +36,7 @@ public class PlusEnvironment : IPlusEnvironment
 
     private static IGame _game;
     private static ConfigurationData _configuration;
-    private static IConnectionHandling _connectionManager;
+    private static ISocketManagerV2 _connectionManager;
     private static ILanguageManager _languageManager;
     private static ISettingsManager _settingsManager;
     private static IDatabase _database;
@@ -66,7 +67,7 @@ public class PlusEnvironment : IPlusEnvironment
         IFigureDataManager figureDataManager,
         IGame game,
         IEnumerable<IStartable> startableTasks,
-        IConnectionHandling connectionHandling,
+        ISocketManagerV2 connectionHandling,
         IRconSocket rconSocket)
     {
         _database = database;
@@ -125,7 +126,7 @@ public class PlusEnvironment : IPlusEnvironment
 
             //Accept connections.
             _connectionManager.Init(int.Parse(GetConfig().Data["game.tcp.port"]), int.Parse(GetConfig().Data["game.tcp.conlimit"]),
-                int.Parse(GetConfig().Data["game.tcp.conperip"]), GetConfig().Data["game.tcp.enablenagles"].ToLower() == "true");
+                int.Parse(GetConfig().Data["game.tcp.conperip"]), new InitialPacketParser(), GetConfig().Data["game.tcp.enablenagles"].ToLower() == "true");
 
             // Allow services to self initialize
             foreach (var task in _startableTasks)

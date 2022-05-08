@@ -204,15 +204,6 @@ public class ConnectionInformation : IDisposable
         }
     }
 
-    /// <summary>
-    ///     Handles packet data
-    /// </summary>
-    /// <param name="packet">The data received by the </param>
-    private void HandlePacketData(byte[] packet)
-    {
-        if (Parser != null) Parser.HandlePacketData(packet);
-    }
-
     public void SendData(byte[] packet)
     {
         try
@@ -227,6 +218,15 @@ public class ConnectionInformation : IDisposable
         {
             Disconnect();
         }
+    }
+
+    /// <summary>
+    ///     Handles packet data
+    /// </summary>
+    /// <param name="packet">The data received by the </param>
+    private void HandlePacketData(byte[] packet)
+    {
+        if (Parser != null) Parser.HandlePacketData(packet);
     }
 
     /// <summary>
