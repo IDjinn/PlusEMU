@@ -21,8 +21,8 @@ public static class ClothingGenderExtensions
 
     public static string ToString(this ClothingGender clothingGender) => clothingGender switch
     {
-        ClothingGender.Female => "F",
-        ClothingGender.Male => "M",
-        _ => "U",
+        ClothingGender.Female => "f",
+        ClothingGender.Male => "m",
+        _ => "u",
     };
 }

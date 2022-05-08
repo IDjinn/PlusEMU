@@ -67,7 +67,30 @@ public class FigureDataManager : IFigureDataManager
             
             _setTypes[figureSet.Type][figureSet.Id] = figureSet;
         }
+
+        var palettes = connection.Query("SELECT * from figure_set_palettes");
+        foreach (var paletteObj in palettes)
+        {
+            var palette = new Palette((int) paletteObj.id);
+            _palettes[palette.Id] = palette;
+        }
         
+        var colors = connection.Query("SELECT * from figure_set_colors");
+        foreach (var colorObj in colors)
+        {
+            var color = new Color
+            {
+                Id = (int) colorObj.id,
+                PaletteId = (int) colorObj.palette_id,
+                Index = (int) colorObj.index,
+                ClubLevel = (int) colorObj.club_level,
+                Selectable = (bool) colorObj.selectable,
+                Value = (string) colorObj.value,
+            };
+            
+            _palettes[color.PaletteId].Colors[color.Index] = color;
+        }
+
         Log.Info("Loaded " + _palettes.Count + " Color Palettes");
         Log.Info("Loaded " + _setTypes.Count + " Set Types");
     }

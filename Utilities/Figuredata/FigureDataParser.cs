@@ -29,21 +29,27 @@ namespace Plus.Utilities.Figuredata
             var colors = xDoc.GetElementsByTagName("colors");
             var setTypes = new Dictionary<SetType, Dictionary<int, FigureSet>>();
             var palettes = new Dictionary<int, Palette>();
+
+            foreach (var setType in Enum.GetValues<SetType>())
+            {
+                setTypes[setType] = new Dictionary<int, FigureSet>();
+            }
+
             foreach (XmlNode node in colors)
             {
                 foreach (XmlNode child in node.ChildNodes)
                 {
-                    var id = Convert.ToInt32(child.Attributes!["id"]!.Value);
-                    var palette = new Palette(id);
-                    palettes.Add(id, palette);
+                    var paletteId = Convert.ToInt32(child.Attributes!["id"]!.Value);
+                    var palette = new Palette(paletteId);
+                    palettes.Add(paletteId, palette);
                     foreach (XmlNode sub in child.ChildNodes)
                     {
                         var subId = Convert.ToInt32(sub.Attributes!["id"]!.Value);
                         var subIndex = Convert.ToInt32(sub.Attributes!["index"]!.Value);
                         var subClubLevel = Convert.ToInt32(sub.Attributes!["club"]!.Value);
                         var selectable = Convert.ToInt32(sub.Attributes!["selectable"]!.Value) == 1;
-                        var color = new Color(subId, subIndex, subClubLevel, selectable, sub.InnerText);
-                        palettes[id].Colors.Add(subId, color);
+                        var color = new Color(subId,paletteId, subIndex, subClubLevel, selectable, sub.InnerText);
+                        palettes[paletteId].Colors.Add(subId, color);
                     }
                 }
             }
@@ -89,7 +95,8 @@ namespace Plus.Utilities.Figuredata
                 }
             }
 
-            setTypes[SetType.Hd].Add(99999, new FigureSet(99999, SetType.Hd, 99999, ClothingGender.Unisex, 0, true, false, false));
+            setTypes[SetType.Hd].Add(99999,
+                new FigureSet(99999, SetType.Hd, 99999, ClothingGender.Unisex, 0, true, false, false));
             return new FigureDataParseResult
             {
                 Sets = setTypes,
@@ -101,9 +108,8 @@ namespace Plus.Utilities.Figuredata
         {
             const string insertClothingSetsQuery =
                 "INSERT INTO figure_sets (id, type, palette_id, gender, club_level, colorable, selectable, pre_selectable) VALUES ";
-            const string insertPalettesQuery = "INSERT INTO `clothing_palettes` (id, color_id) VALUES ";
             using var connection = database.Connection();
-            var sb = new StringBuilder(1024);
+            var sb = new StringBuilder(1024).Append(insertClothingSetsQuery);
             var count = 0;
             var total = 0;
             foreach (var sets in data.Sets.Values)
@@ -112,29 +118,29 @@ namespace Plus.Utilities.Figuredata
                 {
                     sb.Append('(');
                     sb.Append(id);
-                    sb.Append(',');
+                    sb.Append(",'");
                     sb.Append(set.Type.AsString());
-                    sb.Append(',');
+                    sb.Append("',");
                     sb.Append(set.PaletteId);
-                    sb.Append(',');
+                    sb.Append(",'");
                     sb.Append(ClothingGenderExtensions.ToString(set.Gender));
-                    sb.Append(',');
+                    sb.Append("',");
                     sb.Append(set.ClubLevel);
                     sb.Append(',');
-                    sb.Append(set.Colorable);
+                    sb.Append(Convert.ToByte(set.Colorable));
                     sb.Append(',');
-                    sb.Append(set.Selectable);
+                    sb.Append(Convert.ToByte(set.Selectable));
                     sb.Append(',');
-                    sb.Append(set.PreSelectable);
+                    sb.Append(Convert.ToByte(set.PreSelectable));
                     sb.Append(')');
                     count++;
+                    total++;
 
                     if (count >= 100)
                     {
-                        total += count;
-                        sb.Append(';');
-                        connection.Execute(insertClothingSetsQuery + sb);
+                        connection.Execute(sb.ToString());
                         sb.Clear();
+                        sb.Append(insertClothingSetsQuery);
                         count = 0;
                         continue;
                     }
@@ -143,34 +149,42 @@ namespace Plus.Utilities.Figuredata
                 }
             }
 
-            sb.Clear();
+            connection.Execute(sb.ToString(0, sb.Length - 1));
+
             Log.Info("Inserted {total} sets", total);
+            sb.Clear();
+            total = 0;
+            count = 0;
 
             const string colorsInsertQuery =
-                "INSERT INTO `clothing_colors` (id, `index`, club_level, selectable, color_value) VALUES ";
-            foreach (var (id, palette) in data.Palettes)
+                "INSERT INTO `figure_set_colors` (id, palette_id, `index`, club_level, selectable, value) VALUES ";
+            sb.Append(colorsInsertQuery);
+            foreach (var (_, palette) in data.Palettes)
             {
                 foreach (var (_, color) in palette.Colors)
                 {
                     sb.Append('(');
                     sb.Append(color.Id);
                     sb.Append(',');
+                    sb.Append(color.PaletteId);
+                    sb.Append(',');
                     sb.Append(color.Index);
                     sb.Append(',');
                     sb.Append(color.ClubLevel);
                     sb.Append(',');
-                    sb.Append(color.Selectable);
-                    sb.Append(',');
+                    sb.Append(Convert.ToByte(color.Selectable));
+                    sb.Append(",'");
                     sb.Append(color.Value);
-                    sb.Append(')');
+                    sb.Append("')");
                     count++;
+                    total++;
 
                     if (count >= 100)
                     {
-                        total += count;
                         sb.Append(';');
-                        connection.Execute(colorsInsertQuery + sb);
+                        connection.Execute(sb.ToString());
                         sb.Clear();
+                        sb.Append(colorsInsertQuery);
                         count = 0;
                         continue;
                     }
@@ -179,13 +193,18 @@ namespace Plus.Utilities.Figuredata
                 }
             }
 
-            sb.Clear();
+            connection.Execute(sb.ToString(0, sb.Length - 1));
+
             Log.Info("Inserted {total} colors", total);
-/*
-            const string palettesInsertQuery = "INSERT INTO `clothing_palettes` (id, color_id) VALUES ";
+            sb.Clear();
+            total = 0;
+            count = 0;
+
+            const string palettesInsertQuery = "INSERT INTO `figure_set_palettes` (id, color_id) VALUES ";
+            sb.Append(palettesInsertQuery);
             foreach (var (id, palette) in data.Palettes)
             {
-                foreach (var (_ color) in palette.Colors)
+                foreach (var (_, color) in palette.Colors)
                 {
                     sb.Append('(');
                     sb.Append(id);
@@ -193,13 +212,13 @@ namespace Plus.Utilities.Figuredata
                     sb.Append(color.Id);
                     sb.Append(')');
                     count++;
+                    total++;
 
                     if (count >= 100)
                     {
-                        total += count;
-                        sb.Append(';');
-                        connection.Execute(palettesInsertQuery + sb);
+                        connection.Execute(sb.ToString());
                         sb.Clear();
+                        sb.Append(palettesInsertQuery);
                         count = 0;
                         continue;
                     }
@@ -207,8 +226,8 @@ namespace Plus.Utilities.Figuredata
                     sb.Append(',');
                 }
             }
-*/
-            sb.Clear();
+
+            connection.Execute(sb.ToString(0, sb.Length - 1));
             Log.Info("Inserted {total} palettes", total);
         }
     }
