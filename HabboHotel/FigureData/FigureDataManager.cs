@@ -92,7 +92,7 @@ public class FigureDataManager : IFigureDataManager
         Log.Info("Loaded " + _setTypes.Count + " Set Types");
     }
 
-    public string ValidateFigure(Habbo habbo, string figure, ClothingGender gender,
+    public string ValidateFigure(string figure, int clubLevel, ClothingGender gender,
         ICollection<ClothingParts> clothingParts)
     {
         var sb = new StringBuilder(figure.Length);
@@ -114,7 +114,7 @@ public class FigureDataManager : IFigureDataManager
                     continue;
 
                 var set = sets[setId];
-                if (set.ClubLevel > habbo.VipRank)
+                if (set.ClubLevel > clubLevel)
                     continue;
 
                 partBuilder.Append(setType.AsString());
@@ -132,7 +132,7 @@ public class FigureDataManager : IFigureDataManager
                 }
 
                 var color = palette.Colors[colorId];
-                if (color.ClubLevel > habbo.VipRank)
+                if (color.ClubLevel > clubLevel)
                 {
                     partBuilder.Append('-');
                     partBuilder.Append(GetRandomColor(set.PaletteId));

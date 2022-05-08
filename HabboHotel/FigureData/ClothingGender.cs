@@ -16,7 +16,7 @@ public static class ClothingGenderExtensions
         "U" or "u" => ClothingGender.Unisex,
         "M" or "m" => ClothingGender.Male,
         "F" or "f" => ClothingGender.Female,
-        _ => throw new ArgumentException("Invalid ClothingGender type.")
+        _ => throw new ArgumentOutOfRangeException(nameof(gender), gender, $"Invalid {nameof(ClothingGender)} type.")
     };
 
     public static string ToString(this ClothingGender clothingGender) => clothingGender switch

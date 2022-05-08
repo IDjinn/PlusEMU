@@ -11,9 +11,9 @@ public class Part
         ColorIndex = colorIndex;
     }
 
-    public int Id { get; set; }
-    public SetType SetType { get; set; }
-    public bool Colorable { get; set; }
-    public int Index { get; set; }
-    public int ColorIndex { get; set; }
+    public int Id { get; }
+    public SetType SetType { get; }
+    public bool Colorable { get; }
+    public int Index { get; }
+    public int ColorIndex { get; }
 }

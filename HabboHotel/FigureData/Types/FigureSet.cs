@@ -5,7 +5,7 @@ namespace Plus.HabboHotel.FigureData.Types;
 
 public class FigureSet
 {
-    public int Id { get; init;  }
+    public int Id { get; init; }
     public SetType Type { get; init; }
     public int PaletteId { get; init; }
     public ClothingGender Gender { get; init; }
@@ -17,10 +17,10 @@ public class FigureSet
 
     public FigureSet()
     {
-        
     }
-    
-    public FigureSet(int id, SetType setType, int paletteId, ClothingGender gender, int clubLevel, bool colorable, bool selectable, bool preSelectable)
+
+    public FigureSet(int id, SetType setType, int paletteId, ClothingGender gender, int clubLevel, bool colorable,
+        bool selectable, bool preSelectable)
     {
         Id = id;
         Type = setType;

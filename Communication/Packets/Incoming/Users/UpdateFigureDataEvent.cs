@@ -32,7 +32,7 @@ internal class UpdateFigureDataEvent : IPacketEvent
     {
         var gender = packet.PopString().ToUpper();
         var figureRaw = packet.PopString();
-        var look = _figureManager.ValidateFigure(session.GetHabbo(), figureRaw, ClothingGenderExtensions.ParseFromString(gender), session.GetHabbo().GetClothing().GetClothingParts);
+        var look = _figureManager.ValidateFigure(figureRaw, session.GetHabbo().VipRank, ClothingGenderExtensions.ParseFromString(gender), session.GetHabbo().GetClothing().GetClothingParts);
         if (look == session.GetHabbo().Look)
             return Task.CompletedTask;
         if ((DateTime.Now - session.GetHabbo().LastClothingUpdateTime).TotalSeconds <= 2.0)

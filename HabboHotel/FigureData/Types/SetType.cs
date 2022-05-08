@@ -56,7 +56,7 @@ public static class SetTypeExtensions
         SetType.Rs => "rs",
         SetType.Lc => "lc",
         SetType.Rc => "rc",
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown set type.")
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown {nameof(SetType)}.")
         
     };
     
@@ -85,6 +85,6 @@ public static class SetTypeExtensions
         "rs" => SetType.Rs,
         "lc" => SetType.Lc,
         "rc" => SetType.Rc,
-        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unknown set type.")
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, $"Unknown {nameof(SetType)}.")
     };
 }

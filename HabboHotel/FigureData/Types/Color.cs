@@ -4,8 +4,8 @@ public class Color
 {
     public Color()
     {
-        
     }
+
     public Color(int id, int paletteId, int index, int clubLevel, bool selectable, string value)
     {
         Id = id;
