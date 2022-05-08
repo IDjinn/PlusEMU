@@ -57,7 +57,7 @@ public class BadgeManager : IBadgeManager
         await connection.ExecuteScalarAsync<int>("REPLACE INTO `user_badges` (`user_id`,`badge_id`,`badge_slot`) VALUES (@userId, @badge, '0');", new
         {
             userId = habbo.Id,
-            badge
+            badge = badge.Code
         });
         habbo.Inventory.Badges.AddBadge(new Badge(code, 0));
             habbo.GetClient().SendPacket(new BadgesComposer(habbo.GetClient()));
